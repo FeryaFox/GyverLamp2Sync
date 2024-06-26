@@ -1,4 +1,55 @@
 char buf[UDP_TX_PACKET_MAX_SIZE + 1];
+
+const byte sync_ver = 12;
+
+void sync_data(int data_type) {
+
+  char reply[100];
+  mString packet(reply);
+  packet.clear();
+  packet = packet + "GL_RESP," + data_type + ",";
+  switch (data_type){
+    case 0:
+      packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec + ",";
+      packet = packet + cfg.curPreset +"," + cfg.WiFimode + "," + cfg.role + "," + cfg.group;
+      break;
+    case 1:
+      packet = packet + cfg.bright + "," + cfg.adcMode + "," + cfg.minBright + "," + cfg.maxBright + "," + cfg.rotation + "," + cfg.rotRnd + ",";
+      packet = packet + cfg.rotPeriod + "," + cfg.deviceType + "," + cfg.maxCur + "," + cfg.workFrom + "," + cfg.workTo + "," + cfg.matrix + ",";
+      packet = packet + cfg.length + "," + cfg.width + "," + cfg.GMT + "," + cfg.cityID + ",";
+      packet = packet + cfg.mqtt + "," + cfg.mqttID + "," + cfg.mqttHost + "," + cfg.mqttPort + "," + cfg.mqttLogin + "," + cfg.mqttPass + ",";
+      packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec;
+      break;
+    case 2:
+      packet = packet + cfg.curPreset + "," + cfg.presetAmount + "," + now.day + "," + now.hour + "," + now.min + "," + now.sec + ",";
+      for (int i = 0; i < cfg.presetAmount; i++){
+        packet = packet + preset[i].effect + "," + preset[i].fadeBright + "," + preset[i].bright + "," + preset[i].advMode + "," + preset[i].soundReact + "," + preset[i].min + "," + preset[i].max + "," + preset[i].speed + "," + preset[i].palette + "," + preset[i].scale + "," + preset[i].fromCenter + "," + preset[i].color + "," + preset[i].fromPal;
+      }
+      break;
+    case 3:
+      packet = packet + dawn.state[0] + "," + dawn.state[1] + "," +  dawn.state[2] + "," + dawn.state[3] + "," + dawn.state[4] + "," + dawn.state[5] + "," + dawn.state[6] + ",";
+      packet = packet + dawn.hour[0] + "," + dawn.hour[1] + "," +  dawn.hour[2] + "," + dawn.hour[3] + "," + dawn.hour[4] + "," + dawn.hour[5] + "," + dawn.hour[6] + ",";
+      packet = packet + dawn.minute[0] + "," + dawn.minute[1] + "," +  dawn.minute[2] + "," + dawn.minute[3] + "," + dawn.minute[4] + "," + dawn.minute[5] + "," + dawn.minute[6] + ",";
+      packet = packet + dawn.bright + "," + dawn.time + "," + dawn.post + ",";
+      packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec;
+      break;
+    case 5:
+      packet = packet + pal.size + ",";
+      for (int i = 0; i < 16 * 3; i++){
+        packet = packet + pal.strip[i] + ",";
+      }
+      packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec;
+      break;
+  }
+
+  DEBUGLN(reply);
+  FOR_i(0, 4) {
+    sendUDP(reply);
+    delay(15);
+  }
+
+}
+
 void parsing() {
   if (Udp.parsePacket()) {
     int n = Udp.read(buf, UDP_TX_PACKET_MAX_SIZE);
@@ -54,8 +105,35 @@ void parsing() {
       }
     }
 
-    // тип 0 - control, 1 - config, 2 - effects, 3 - dawn, 4 - from master, 5 - palette, 6 - time
+    // тип 0 - control, 1 - config, 2 - effects, 3 - dawn, 4 - from master, 5 - palette, 6 - time, 20 - sync
     switch (data[1]) {
+      case 20: DEBUGLN("Sync"); blinkTmr.restart();
+        switch (data[2]) {
+          case 0:
+            sync_data(0);
+            DEBUGLN("Sync Data 0");
+            break;
+          case 1:
+            sync_data(1);
+            DEBUGLN("Sync Data 1");
+            break;
+          case 2:
+            sync_data(2);
+            DEBUGLN("Sync Data 2");
+            break;
+          case 3:
+            sync_data(3);
+            DEBUGLN("Sync Data 3");
+            break;
+          case 5:
+            sync_data(5);
+            DEBUGLN("Sync Data 5");
+            break;
+          case 6:
+            sendUDP(sync_ver);
+            DEBUGLN("Sync ver = " + String(sync_ver));
+            break;
+        }
       case 0: DEBUGLN("Control"); blinkTmr.restart();
         if (!cfg.state && data[2] != 1) return;   // если лампа выключена и это не команда на включение - не обрабатываем
         switch (data[2]) {
