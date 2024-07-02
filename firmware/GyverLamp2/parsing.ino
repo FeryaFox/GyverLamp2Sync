@@ -3,7 +3,7 @@ char buf[UDP_TX_PACKET_MAX_SIZE + 1];
 const byte sync_ver = 12;
 
 void sync_data(int data_type) {
-
+  if (!ENABLE_SYNC) return;
   char reply[100];
   mString packet(reply);
   packet.clear();
