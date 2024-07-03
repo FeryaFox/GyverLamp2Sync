@@ -11,7 +11,7 @@ void sync_data(int data_type) {
   switch (data_type){
     case 0:
       packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec + ",";
-      packet = packet + cfg.curPreset +"," + cfg.WiFimode + "," + cfg.role + "," + cfg.group;
+      packet = packet + (cfg.curPreset + 1) +"," + cfg.WiFimode + "," + cfg.role + "," + cfg.group;
       break;
     case 1:
       packet = packet + cfg.bright + "," + cfg.adcMode + "," + cfg.minBright + "," + cfg.maxBright + "," + cfg.rotation + "," + cfg.rotRnd + ",";
@@ -43,7 +43,7 @@ void sync_data(int data_type) {
   }
 
   DEBUGLN(reply);
-  FOR_i(0, 4) {
+  FOR_i(0, 1) {
     sendUDP(reply);
     delay(15);
   }
@@ -107,7 +107,10 @@ void parsing() {
 
     // тип 0 - control, 1 - config, 2 - effects, 3 - dawn, 4 - from master, 5 - palette, 6 - time, 20 - sync
     switch (data[1]) {
-      case 20: DEBUGLN("Sync"); blinkTmr.restart();
+      case 20: 
+      {
+        DEBUGLN("Sync"); 
+        blinkTmr.restart();
         switch (data[2]) {
           case 0:
             sync_data(0);
@@ -134,6 +137,8 @@ void parsing() {
             DEBUGLN("Sync ver = " + String(sync_ver));
             break;
         }
+        break;
+      }
       case 0: DEBUGLN("Control"); blinkTmr.restart();
         if (!cfg.state && data[2] != 1) return;   // если лампа выключена и это не команда на включение - не обрабатываем
         switch (data[2]) {
