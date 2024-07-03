@@ -4,7 +4,7 @@ const byte sync_ver = 12;
 
 void sync_data(int data_type) {
   if (!ENABLE_SYNC) return;
-  char reply[100];
+  char reply[1024];
   mString packet(reply);
   packet.clear();
   packet = packet + "GL_RESP," + data_type + ",";
@@ -21,9 +21,9 @@ void sync_data(int data_type) {
       packet = packet + now.day + "," + now.hour + "," + now.min + "," + now.sec;
       break;
     case 2:
-      packet = packet + cfg.curPreset + "," + cfg.presetAmount + "," + now.day + "," + now.hour + "," + now.min + "," + now.sec + ",";
+      packet = packet + cfg.curPreset + "," + cfg.presetAmount + "," + now.day + "," + now.hour + "," + now.min + "," + now.sec;
       for (int i = 0; i < cfg.presetAmount; i++){
-        packet = packet + preset[i].effect + "," + preset[i].fadeBright + "," + preset[i].bright + "," + preset[i].advMode + "," + preset[i].soundReact + "," + preset[i].min + "," + preset[i].max + "," + preset[i].speed + "," + preset[i].palette + "," + preset[i].scale + "," + preset[i].fromCenter + "," + preset[i].color + "," + preset[i].fromPal;
+        packet = packet + "," + preset[i].effect + "," + preset[i].fadeBright + "," + preset[i].bright + "," + preset[i].advMode + "," + preset[i].soundReact + "," + preset[i].min + "," + preset[i].max + "," + preset[i].speed + "," + preset[i].palette + "," + preset[i].scale + "," + preset[i].fromCenter + "," + preset[i].color + "," + preset[i].fromPal;
       }
       break;
     case 3:
